@@ -2,6 +2,41 @@
 
 Toutes les commandes se lancent depuis la racine du projet. Les résultats vont dans `runs/<id>/`.
 
+## Tout d'un coup : `rpsum run`
+
+```bash
+uv run rpsum run "https://www.youtube.com/watch?v=XXXX" --id ma-session --context ma-campagne.md
+```
+
+La commande enchaîne extraction, contexte, transcription, identification, résumés et extraction des passages.
+
+| Option | Effet |
+|---|---|
+| `--id` | identifiant du run |
+| `--context fichier.md` | contexte de campagne, voir [[Contexte de campagne]] |
+| `--preset nom` | résumé à produire, répétable. Défaut : `[run] presets` de `config.toml` |
+| `--speakers N` | nombre de personnes à table. Défaut : celui de la fiche de contexte |
+| `--force` | refait tout depuis la transcription |
+| `--from étape` | refait à partir de `context`, `transcribe`, `identify` ou `summarize` |
+
+### Reprise
+
+Relancer `rpsum run` sur un run existant (`rpsum run ma-session`) ne refait pas ce qui existe :
+
+| Étape | Relance simple | `--force` |
+|---|---|---|
+| Audio | gardé | gardé |
+| Contexte | gardé si ses entrées n'ont pas changé | gardé si ses entrées n'ont pas changé |
+| Transcription | gardée | refaite |
+| Identification | gardée | refaite |
+| Fiches de scène | gardées | refaites |
+| Résumés | refaits | refaits |
+| Extraction des passages | refaite | refaite |
+
+Refaire une étape efface ce que les suivantes en avaient tiré. Chez Mistral, une transcription interrompue reprend au morceau où elle s'est arrêtée.
+
+Les sections suivantes décrivent chaque étape, lançable séparément.
+
 ## 1. Extraire l'audio
 
 ```bash
@@ -21,7 +56,7 @@ uv run rpsum transcribe ma-session --speakers 5 --vocab runs/ma-session/vocab.tx
 | Option | Effet |
 |---|---|
 | `--speakers N` | nombre de personnes à table. Évite qu'une même voix reçoive plusieurs identifiants. |
-| `--vocab fichier` | noms propres, un par ligne (personnages, PNJ, lieux). Améliore nettement leur orthographe. |
+| `--vocab fichier` | noms propres, un par ligne. Défaut : les noms de la fiche de contexte. |
 | `--provider`, `--model` | autre fournisseur que celui de `config.toml` |
 | `--start`, `--end` | ne traite qu'un extrait, en secondes. Utile pour un essai rapide. |
 | `--language` | langue de la session, `fr` par défaut |
@@ -31,13 +66,13 @@ Chaque combinaison fournisseur, modèle et options garde ses fichiers dans `runs
 
 ## 3. Identifier les participants
 
-Fichier facultatif `runs/<id>/hints.json`, pour donner ce qu'on sait déjà :
+Les participants connus viennent de la fiche de contexte (voir [[Contexte de campagne]]). Sans fiche, un fichier `runs/<id>/hints.json` joue ce rôle :
 
 ```json
 {"gm": "Kratos", "characters": ["Hécate", "Lysandre", "Nakia", "Érik"], "people": 5}
 ```
 
-Puis, en deux temps :
+En deux temps :
 
 ```bash
 uv run rpsum identify ma-session --cast-only   # propose la distribution et s'arrête

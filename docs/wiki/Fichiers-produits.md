@@ -6,6 +6,9 @@ Tout ce qui concerne une session se trouve dans `runs/<id>/`. Ce dossier n'est p
 |---|---|---|
 | `source.json` | `ingest` | titre, chaîne, durée, URL, chapitres |
 | `audio.opus` | `ingest` | audio mono 16 kHz, environ 11 Mo par heure |
+| `context.input.md` | `context` | copie du fichier de contexte fourni |
+| `frames/`, `overlay.json` | `context` | images capturées et participants relevés à l'écran |
+| `context.json`, `context.md` | `context` | fiche de contexte |
 | `transcripts/<fournisseur>__<modèle>…/` | `transcribe` | `raw.json` (réponse brute), `transcript.json`, `transcript.md` |
 | `transcript.json` | `transcribe`, `identify` | transcript courant, au format commun |
 | `transcript.md` | `transcribe`, `identify` | version lisible, horodatée |
@@ -16,6 +19,7 @@ Tout ce qui concerne une session se trouve dans `runs/<id>/`. Ce dossier n'est p
 | `summary.<nom>.md` | `summarize` | un résumé par nom |
 | `highlights.json`, `highlights.md` | `extract` | passages retenus |
 | `clips/` | `extract --clips` | extraits audio |
+| `ui.log` | interface | journal du dernier traitement lancé depuis l'interface |
 | `run.json` | toutes | journal : fournisseur, modèle, durée et coût estimé de chaque étape |
 
 ## Format d'une réplique

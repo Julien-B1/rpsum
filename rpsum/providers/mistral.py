@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import json
 import os
 import tempfile
 from collections import defaultdict
@@ -117,7 +118,16 @@ class Mistral(Provider):
                 piece = work / f"chunk{index:02d}.opus"
                 au.cut(audio, start, end - start, piece)
             opts.progress(f"Mistral : morceau {index + 1} sur {len(plan)}")
-            raw = self._request(piece, model, opts, references)
+            # Chaque morceau transcrit est gardé sur disque : une transcription interrompue reprend où elle
+            # s'est arrêtée, sans refacturer les morceaux déjà faits.
+            saved = work / f"chunk{index:02d}.json"
+            cached = json.loads(saved.read_text()) if saved.exists() else None
+            if cached and cached["model"] == model and abs(cached["start"] - start) < 0.01 and abs(cached["end"] - end) < 0.01:
+                raw = cached["response"]
+                opts.progress(f"Mistral : morceau {index + 1} sur {len(plan)} repris du disque")
+            else:
+                raw = self._request(piece, model, opts, references)
+                saved.write_text(json.dumps({"model": model, "start": start, "end": end, "response": raw}, ensure_ascii=False))
             raws.append({"chunk": index, "start": start, "end": end, "response": raw})
 
             # Les locuteurs reconnus gardent leur nom global. Les nouveaux en reçoivent un.

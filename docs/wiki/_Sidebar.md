@@ -1,6 +1,8 @@
 - [[Home]]
 - [[Installation]]
 - [[Utilisation]]
+- [[Interface]]
+- [[Contexte de campagne]]
 - [[Fournisseurs et modèles]]
 - [[Résumés]]
 - [[Fichiers produits]]

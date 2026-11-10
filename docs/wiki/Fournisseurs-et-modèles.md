@@ -4,15 +4,17 @@ Chaque tâche a son fournisseur et son modèle. Le réglage par défaut est dans
 
 ```toml
 [tasks.transcribe]
-provider = "elevenlabs"
-model = "scribe_v2"
+provider = "mistral"
+model = "voxtral-small-transcribe-3"
+# provider = "elevenlabs"
+# model = "scribe_v2"
 
 [tasks.summarize]
 provider = "mistral"
 model = "mistral-large-latest"
 ```
 
-Les tâches sont `transcribe`, `identify`, `summarize` et `extract`. Les options `--provider` et `--model` d'une commande l'emportent sur le fichier.
+Les tâches sont `context`, `vision`, `transcribe`, `identify`, `summarize` et `extract`. Pour passer la transcription sur ElevenLabs, commenter la paire Mistral et décommenter l'autre. Les options `--provider` et `--model` d'une commande l'emportent sur le fichier.
 
 ## Compatibilité
 
@@ -20,6 +22,8 @@ Un modèle n'est accepté que s'il a les capacités exigées par la tâche. Sino
 
 | Tâche | Capacités exigées |
 |---|---|
+| `context` | `chat`, `json_schema` |
+| `vision` | `chat`, `json_schema`, `vision` |
 | `transcribe` | `stt`, `diarization` |
 | `identify` | `chat`, `json_schema` |
 | `summarize` | `chat` |
@@ -42,7 +46,7 @@ Les listes de modèles sont lues en direct auprès de Mistral, d'Ollama et de ll
 
 ## Transcription : ElevenLabs ou Mistral
 
-Sur les deux sessions d'essai, ElevenLabs a mieux séparé les voix et il est le seul à signaler les rires, utiles pour le bêtisier. Il est le choix par défaut. Les coûts sont voisins : environ 0,65 dollar pour une session de 2 h 50.
+Sur les deux premières sessions d'essai, ElevenLabs a mieux séparé les voix et il est le seul à signaler les rires, utiles pour le bêtisier. Mistral est le choix par défaut pendant le développement. Les coûts sont voisins : environ 0,65 dollar pour une session de 2 h 50.
 
 Avec Mistral, la session est découpée sur les silences. Des clips de référence, tirés du premier morceau, servent à garder les mêmes locuteurs d'un morceau à l'autre. La taille des morceaux se règle dans `config.toml` (`mistral_chunk_seconds`).
 

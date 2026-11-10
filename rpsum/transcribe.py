@@ -37,6 +37,8 @@ def transcribe(run: Path, provider_name: str, model: str, opts: TranscribeOption
             audio = out / "extract.opus"
             au.cut(source, start, (end or au.duration(source)) - start, audio)
         opts.workdir = out / "work"
+        if force:  # refaire pour de bon : on oublie les morceaux gardés
+            shutil.rmtree(opts.workdir, ignore_errors=True)
         began = time.time()
         transcript, raws = provider.transcribe(audio, model, opts)
         elapsed = round(time.time() - began, 1)
