@@ -107,7 +107,7 @@ Tout le reste tient dans `/home/julien/rpsum` (venv `uv`, binaire `deno` local, 
 ### Pipeline
 
 ```
-URL ──> ingest ──> transcribe ──> identify ──> enrich ──> summarize
+URL ──> ingest ──> transcribe ──> identify ──> summarize
                                                      └──> extract (moments forts / bêtisier / mèmes)
 ```
 
@@ -163,7 +163,6 @@ Un fournisseur déclare ses modèles et leurs capacités. Une tâche déclare le
 |---|---|---|
 | `transcribe` | `stt` + `diarization` | ElevenLabs, Mistral, local |
 | `identify` | `chat` + `json_schema` | Mistral, local |
-| `enrich` | `chat` (option `audio_chat`) | Mistral, local |
 | `summarize` | `chat` | Mistral, local |
 | `extract` | `chat` + `json_schema` | Mistral, local |
 
@@ -208,18 +207,9 @@ model = "qwen3:8b"
 2. **Validation.** L'utilisateur relit et corrige `cast.json`. Il peut aussi le fournir à l'avance. C'est le point où une erreur coûte le plus cher en aval, d'où la relecture humaine.
 3. **Attribution par réplique.** Passe LLM par fenêtres glissantes : pour chaque segment, `mode` et `character`. Sortie contrainte par schéma JSON, identifiants de segments obligatoires.
 
-### 6.4 `enrich`
+### 6.4 `enrich` — abandonné
 
-- Les événements sonores d'ElevenLabs deviennent des didascalies.
-- Le LLM ajoute `tone` et des didascalies déduites du texte, marquées comme déduites.
-- Option expérimentale : Voxtral Small en chat audio sur des extraits courts pour qualifier l'intonation.
-- Rendu `transcript.md` façon script :
-
-```
-[00:08:32] MJ (narration) — La porte grince. Derrière, une odeur de soufre.
-[00:08:41] Léa / Mira (en jeu, chuchoté) — On aurait dû prendre l'autre couloir.
-[00:08:44] (rires)
-```
+Étape retirée le 2026-11-10. Ce qu'elle devait apporter existe déjà : `identify` produit le transcript en forme de script, avec personnage et mode par réplique, et les sons d'ElevenLabs restent dans le texte (`[rire]`). L'intonation déduite du texte par un LLM aurait été une supposition coûteuse, sans usage en aval.
 
 ### 6.5 `summarize`
 
@@ -243,7 +233,7 @@ model = "qwen3:8b"
 
 ```
 rpsum run <url>                       pipeline complet
-rpsum ingest|transcribe|identify|enrich|summarize|extract <run-id>
+rpsum ingest|transcribe|identify|summarize|extract <run-id>
 rpsum models [--task summarize]       modèles compatibles par tâche
 rpsum cast <run-id>                   afficher / éditer la distribution
 rpsum doctor                          vérifie clés, binaires, serveurs locaux
@@ -278,7 +268,7 @@ Les trois premiers essais (« spikes ») lèvent les inconnues avant d'écrire l
 | 4 | Abstraction fournisseurs + registre de capacités + `rpsum models` | une tâche refuse un modèle incompatible |
 | 5 | `transcribe` complet, format commun, découpe Mistral | session entière transcrite par les deux API |
 | 6 | `identify` + édition de la distribution | distribution correcte sur la session de référence |
-| 7 | `enrich` + `transcript.md` | script lisible avec didascalies |
+| 7 | ~~`enrich`~~ | abandonné le 2026-11-10 |
 | 8 | `summarize` + préréglages | trois résumés de tons et formats différents depuis un seul run |
 | 9 | `extract` + vérification des citations + clips | aucune citation inventée dans la sortie |
 | 10 | Interface Streamlit | pipeline complet lancé depuis le navigateur |

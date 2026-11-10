@@ -6,7 +6,6 @@ from .providers import PROVIDERS, Cap, ModelInfo
 TASKS: dict[str, set[Cap]] = {
     "transcribe": {Cap.STT, Cap.DIARIZATION},
     "identify": {Cap.CHAT, Cap.JSON_SCHEMA},
-    "enrich": {Cap.CHAT},
     "summarize": {Cap.CHAT},
     "extract": {Cap.CHAT, Cap.JSON_SCHEMA},
 }

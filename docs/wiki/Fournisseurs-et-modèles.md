@@ -12,7 +12,7 @@ provider = "mistral"
 model = "mistral-large-latest"
 ```
 
-Les tâches sont `transcribe`, `identify`, `enrich`, `summarize` et `extract`. Les options `--provider` et `--model` d'une commande l'emportent sur le fichier.
+Les tâches sont `transcribe`, `identify`, `summarize` et `extract`. Les options `--provider` et `--model` d'une commande l'emportent sur le fichier.
 
 ## Compatibilité
 
@@ -22,7 +22,6 @@ Un modèle n'est accepté que s'il a les capacités exigées par la tâche. Sino
 |---|---|
 | `transcribe` | `stt`, `diarization` |
 | `identify` | `chat`, `json_schema` |
-| `enrich` | `chat` |
 | `summarize` | `chat` |
 | `extract` | `chat`, `json_schema` |
 

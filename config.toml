@@ -9,10 +9,6 @@ model = "scribe_v2"
 provider = "mistral"
 model = "mistral-large-latest"
 
-[tasks.enrich]
-provider = "mistral"
-model = "mistral-medium-latest"
-
 [tasks.summarize]
 provider = "mistral"
 model = "mistral-large-latest"
