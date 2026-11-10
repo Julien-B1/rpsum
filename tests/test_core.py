@@ -91,12 +91,14 @@ def test_context_gathers_links_and_reports_failures(tmp_path):
     (tmp_path / "notes.md").write_text("Le PNJ s'appelle Talion.")
     (tmp_path / "plan.png").write_bytes(b"x")
     raw = ("Voir [les notes](notes.md), [la carte](plan.png), [un absent](rien.txt) "
-           "et https://exemple.org/page ainsi que /chemin/inexistant/fiche.txt")
+           "et https://exemple.org/page. Ainsi que /chemin/inexistant/fiche.txt et dossier/relatif.md, fin.")
     sources, images = gather(raw, tmp_path)
     status = {s["ref"]: s["status"] for s in sources}
     assert status["notes.md"] == "lu" and "Talion" in sources[1]["text"]
     assert status["rien.txt"].startswith("échec") and status["/chemin/inexistant/fiche.txt"].startswith("échec")
     assert status["https://exemple.org/page"].startswith("non suivi")
+    assert status["dossier/relatif.md"].startswith("échec")
+    assert len(sources) == 7  # le fichier, notes.md, plan.png, rien.txt, deux chemins nus, un lien web
     assert images == [tmp_path / "plan.png"]
 
 

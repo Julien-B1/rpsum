@@ -58,7 +58,7 @@ Un même nom ne figure que dans une seule liste. Sois exhaustif sur les noms pro
 GOOGLE = re.compile(r"https://docs\.google\.com/(document|spreadsheets|presentation)/d/([\w-]+)")
 MD_LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)\)")
 # Chemin écrit tel quel dans le texte, sans espace (un chemin avec espaces passe par un lien Markdown).
-BARE_PATH = re.compile(r"(?<![\w(:/])((?:~|\.{1,2})?/[\w./-]+\.(?:md|txt|json|csv|pdf|png|jpe?g|webp))")
+BARE_PATH = re.compile(r"(?<![\w(:/.-])((?:(?:~|\.{1,2})?/|[\w.-]+/)[\w./-]*\.(?:md|txt|json|csv|pdf|png|jpe?g|webp))\b")
 IMAGES = {".png", ".jpg", ".jpeg", ".webp"}
 
 
@@ -110,7 +110,7 @@ def gather(raw: str, base: Path) -> tuple[list[dict], list[Path]]:
                 sources.append({"ref": ref, "status": "lu", "text": _local(path)[:MAX_SOURCE_CHARS]})
             except Exception as exc:
                 sources.append({"ref": ref, "status": f"échec : {exc}", "text": ""})
-    for ref in re.findall(r"https?://[^\s)>\]]+", raw):
+    for ref in (found.rstrip(".,;:!?") for found in re.findall(r"https?://[^\s)>\]]+", raw)):
         if "docs.google.com" not in ref and ref not in seen:
             seen.add(ref)
             sources.append({"ref": ref, "status": "non suivi (seuls Google Docs et fichiers locaux le sont)", "text": ""})
