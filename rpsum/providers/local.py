@@ -40,7 +40,8 @@ class Ollama(_Local):
             show = httpx.post(f"{self.base_url}/api/show", json={"model": item["name"]}, timeout=10)
             declared = show.json().get("capabilities", ["completion"]) if show.status_code == 200 else ["completion"]
             if "completion" in declared:  # exclut les modèles d'embedding
-                models.append(ModelInfo(self.name, item["name"], {Cap.CHAT, Cap.JSON_SCHEMA}))
+                caps = {Cap.CHAT, Cap.JSON_SCHEMA} | ({Cap.VISION} if "vision" in declared else set())
+                models.append(ModelInfo(self.name, item["name"], caps))
         return models
 
 

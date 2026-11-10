@@ -101,20 +101,35 @@ def sample_for_cast(t: Transcript, names: list[str], per_speaker: int = 30, open
     return "Identifiants :\n" + "\n".join(stats) + "\n\nExtraits (numéro, horodatage, locuteur) :\n" + "\n".join(lines)
 
 
+def load_hints(run: Path) -> dict:
+    """Indices sûrs sur la distribution : la fiche de contexte d'abord, sinon hints.json."""
+    from . import context as ctx
+    context = ctx.load(run)
+    if context and context.get("people"):
+        return ctx.hints(context)
+    path = run / "hints.json"
+    return json.loads(path.read_text()) if path.exists() else {}
+
+
 def propose_cast(run: Path, t: Transcript, provider_name: str, model: str) -> dict:
     provider = resolve("identify", provider_name, model)
-    hints_path = run / "hints.json"
-    hints = json.loads(hints_path.read_text()) if hints_path.exists() else {}
+    hints = load_hints(run)
     hint_text = ""
     if hints:
         hint_text = "\nInformations fournies par l'utilisateur (fiables) :\n"
         if hints.get("gm"):
-            hint_text += f"- Le maître du jeu s'appelle {hints['gm']}.\n"
-        if hints.get("characters"):
+            hint_text += f"- Le maître du jeu s'appelle {hints['gm']}. Utilise ce nom comme `player`.\n"
+        for player in hints.get("players", []):
+            if player.get("character"):
+                hint_text += (f"- {player['name']} joue {player['character']}. "
+                              f"Utilise « {player['name']} » comme `player` de la voix qui incarne {player['character']}.\n")
+        if hints.get("characters") and not hints.get("players"):
             hint_text += f"- Personnages joueurs : {', '.join(hints['characters'])}. Un joueur par personnage.\n"
         if hints.get("people"):
-            hint_text += f"- Il y a {hints['people']} personnes à table.\n"
-    names = [n for n in [hints.get("gm"), *hints.get("characters", [])] if n]
+            hint_text += (f"- Il y a {hints['people']} personnes à table : les identifiants en trop sont des doublons "
+                          f"d'une de ces personnes, ou du bruit.\n")
+    names = [n for n in [hints.get("gm"), *hints.get("characters", []),
+                         *[p["name"] for p in hints.get("players", [])]] if n]
     answer = provider.chat(model, [
         {"role": "system", "content": CAST_PROMPT.format(hints=hint_text)},
         {"role": "user", "content": sample_for_cast(t, names)},
@@ -138,7 +153,7 @@ def apply_cast(t: Transcript, cast: dict) -> None:
 
 
 def annotate_lines(t: Transcript, cast: dict, provider_name: str, model: str, window: int = 120,
-                   context: int = 12, workers: int = 4, progress=lambda message: None) -> int:
+                   context: int = 12, workers: int = 4, progress=lambda message: None, campaign: str = "") -> int:
     """Remplit `mode` et `character` par fenêtres de `window` répliques. Renvoie le nombre de répliques annotées."""
     provider = resolve("identify", provider_name, model)
     people: dict[str, dict] = {}
@@ -157,7 +172,7 @@ def annotate_lines(t: Transcript, cast: dict, provider_name: str, model: str, wi
         text = "\n".join(["[contexte] " + _line(s, t.offset, s.player) for s in before]
                          + [_line(s, t.offset, s.player) for s in body])
         answer = provider.chat(model, [
-            {"role": "system", "content": LINES_PROMPT.format(cast=cast_text)},
+            {"role": "system", "content": LINES_PROMPT.format(cast=cast_text) + ("\n\n" + campaign if campaign else "")},
             {"role": "user", "content": text},
         ], json_schema=LINES_SCHEMA, temperature=0.0)
         return json.loads(answer)["lines"]

@@ -84,3 +84,50 @@ def test_summary_quotes_are_checked_against_transcript():
     text = ("Le vieux dit : « Paraît que c'est une sirène ». Tessa répond : \"On dirait des livreurs de sushis.\" "
             "Il murmure : « Un accident. » Il cite « Élysia ».")
     assert unverified_quotes(text, t) == ["On dirait des livreurs de sushis.", "Un accident."]
+
+
+def test_context_gathers_links_and_reports_failures(tmp_path):
+    from rpsum.context import gather
+    (tmp_path / "notes.md").write_text("Le PNJ s'appelle Talion.")
+    (tmp_path / "plan.png").write_bytes(b"x")
+    raw = ("Voir [les notes](notes.md), [la carte](plan.png), [un absent](rien.txt) "
+           "et https://exemple.org/page ainsi que /chemin/inexistant/fiche.txt")
+    sources, images = gather(raw, tmp_path)
+    status = {s["ref"]: s["status"] for s in sources}
+    assert status["notes.md"] == "lu" and "Talion" in sources[1]["text"]
+    assert status["rien.txt"].startswith("échec") and status["/chemin/inexistant/fiche.txt"].startswith("échec")
+    assert status["https://exemple.org/page"].startswith("non suivi")
+    assert images == [tmp_path / "plan.png"]
+
+
+def test_context_merge_vocabulary_and_hints():
+    from rpsum.context import hints, merge, prompt_block, vocabulary
+    entity = lambda name, aliases=(), description="": {"name": name, "aliases": list(aliases), "description": description}
+    blank = {"title": None, "system": None, "setting": "", "background": "", "people": [],
+             "characters": [], "npcs": [], "places": [], "factions": [], "items": [], "terms": []}
+    one = {**blank, "title": "Void", "people": [{"name": "Karu", "aliases": [], "role": "mj", "character": None},
+                                                {"name": "Jonda", "aliases": [], "role": "joueur", "character": "Saigetsu"}],
+           "npcs": [entity("Talion", ["le tavernier"])]}
+    two = {**blank, "title": "Autre", "npcs": [entity("talion", ["Tal"], "Tavernier endeuillé"), entity("Corven")]}
+    merged = merge([one, two])
+    assert merged["title"] == "Void" and [n["name"] for n in merged["npcs"]] == ["Talion", "Corven"]
+    assert merged["npcs"][0]["aliases"] == ["le tavernier", "Tal"] and merged["npcs"][0]["description"] == "Tavernier endeuillé"
+    assert vocabulary(merged) == ["Karu", "Jonda", "Saigetsu", "Talion", "Corven"]
+    assert hints(merged) == {"gm": "Karu", "players": [{"name": "Jonda", "character": "Saigetsu"}],
+                             "characters": ["Saigetsu"], "people": 2}
+    assert "Talion (Tavernier endeuillé) [aussi : le tavernier, Tal]" in prompt_block(merged)
+    assert prompt_block(None) == ""
+
+
+def test_url_start_and_resume_rules():
+    from rpsum.pipeline import DOWNSTREAM, is_annotated
+    from rpsum.schema import Segment, Transcript
+    from rpsum.vision import url_start
+    assert url_start("https://www.youtube.com/watch?v=abc&t=229s") == 229
+    assert url_start("https://www.twitch.tv/videos/1?t=1h2m5s") == 3725
+    assert url_start("https://www.youtube.com/watch?v=abc") == 0
+    raw = Transcript(provider="x", model="y", segments=[Segment(start=0, end=1, speaker="s", text="a")])
+    assert not is_annotated(raw)
+    raw.segments[0].mode = "en-jeu"
+    assert is_annotated(raw)
+    assert "cast.json" in DOWNSTREAM["transcribe"] and "cast.json" not in DOWNSTREAM["identify"]

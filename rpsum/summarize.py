@@ -109,9 +109,9 @@ def load_preset(name: str | None, overrides: dict) -> dict:
 
 
 def build_scenes(t: Transcript, cast: dict, provider_name: str, model: str, window: int = 220,
-                 progress=lambda message: None) -> list[dict]:
+                 progress=lambda message: None, campaign: str = "") -> list[dict]:
     provider = resolve("summarize", provider_name, model)
-    system = MAP_PROMPT.format(cast=cast_text(cast))
+    system = MAP_PROMPT.format(cast=cast_text(cast)) + ("\n\n" + campaign if campaign else "")
 
     def work(segments) -> list[dict]:
         text = "\n".join(llm.line(s, t.offset) for s in segments)
@@ -143,13 +143,13 @@ def scenes_text(scenes: list[dict], scope: str) -> str:
 
 
 def write_summary(scenes: list[dict], cast: dict, title: str, settings: dict, provider_name: str, model: str,
-                  transcript: Transcript | None = None) -> str:
+                  transcript: Transcript | None = None, campaign: str = "") -> str:
     provider = resolve("summarize", provider_name, model)
     instructions = f"- Consigne supplémentaire : {settings['instructions']}\n" if settings["instructions"] else ""
     system = REDUCE_PROMPT.format(
         title=title, cast=cast_text(cast), tone=settings["tone"], words=settings["words"],
         format=FORMATS[settings["format"]], pov=settings["pov"], scope=SCOPES[settings["scope"]],
-        instructions=instructions)
+        instructions=instructions) + ("\n\n" + campaign if campaign else "")
     messages = [{"role": "system", "content": system},
                 {"role": "user", "content": scenes_text(scenes, settings["scope"])}]
     text = provider.chat(model, messages, temperature=0.6).strip()
@@ -194,10 +194,10 @@ def unverified_quotes(text: str, t: Transcript) -> list[str]:
 
 
 def load_or_build_scenes(run: Path, t: Transcript, cast: dict, provider_name: str, model: str, force: bool,
-                         progress=lambda message: None) -> list[dict]:
+                         progress=lambda message: None, campaign: str = "") -> list[dict]:
     path = run / "scenes.json"
     if path.exists() and not force:
         return json.loads(path.read_text())["scenes"]
-    scenes = build_scenes(t, cast, provider_name, model, progress=progress)
+    scenes = build_scenes(t, cast, provider_name, model, progress=progress, campaign=campaign)
     path.write_text(json.dumps({"model": f"{provider_name}/{model}", "scenes": scenes}, ensure_ascii=False, indent=1))
     return scenes

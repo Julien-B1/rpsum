@@ -5,6 +5,8 @@ from .providers import PROVIDERS, Cap, ModelInfo
 # Capacités qu'un modèle doit avoir pour être proposé sur une tâche.
 TASKS: dict[str, set[Cap]] = {
     "transcribe": {Cap.STT, Cap.DIARIZATION},
+    "context": {Cap.CHAT, Cap.JSON_SCHEMA},
+    "vision": {Cap.CHAT, Cap.JSON_SCHEMA, Cap.VISION},
     "identify": {Cap.CHAT, Cap.JSON_SCHEMA},
     "summarize": {Cap.CHAT},
     "extract": {Cap.CHAT, Cap.JSON_SCHEMA},

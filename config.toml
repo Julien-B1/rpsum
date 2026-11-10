@@ -8,6 +8,16 @@ model = "voxtral-small-transcribe-3"
 # provider = "elevenlabs"
 # model = "scribe_v2"
 
+# Lecture du fichier de contexte de campagne.
+[tasks.context]
+provider = "mistral"
+model = "mistral-large-latest"
+
+# Lecture des images (incrustations de la vidéo, images jointes au contexte).
+[tasks.vision]
+provider = "mistral"
+model = "mistral-medium-latest"
+
 [tasks.identify]
 provider = "mistral"
 model = "mistral-large-latest"
@@ -24,3 +34,9 @@ model = "mistral-large-latest"
 language = "fr"
 # Mistral : taille cible des morceaux, en secondes (fenêtre de 65 536 tokens).
 mistral_chunk_seconds = 1500
+
+[run]
+# Résumés produits par `rpsum run` : noms de préréglages de presets/.
+presets = ["fiche"]
+# Extraits audio des passages notés 8 et plus.
+clips = true

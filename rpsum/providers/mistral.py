@@ -76,6 +76,8 @@ class Mistral(Provider):
                 caps |= {Cap.CHAT, Cap.JSON_SCHEMA}
             if flags.get("audio") and flags.get("completion_chat"):
                 caps.add(Cap.AUDIO_CHAT)
+            if flags.get("vision") and flags.get("completion_chat"):
+                caps.add(Cap.VISION)
             if caps:
                 models.append(ModelInfo(self.name, item["id"], caps, item.get("max_context_length")))
         return sorted(models, key=lambda m: m.id)

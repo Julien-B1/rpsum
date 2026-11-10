@@ -86,10 +86,10 @@ def link(url: str | None, seconds: float) -> str | None:
 
 def extract(t: Transcript, cast: dict, provider_name: str, model: str, url: str | None = None,
             window: int = 220, overlap: int = 20, max_span: float = 300.0,
-            progress=lambda message: None) -> tuple[list[dict], int]:
+            progress=lambda message: None, campaign: str = "") -> tuple[list[dict], int]:
     """Renvoie les passages retenus et le nombre de passages rejetés (citation introuvable ou bornes fausses)."""
     provider = resolve("extract", provider_name, model)
-    system = PROMPT.format(cast=cast_text(cast))
+    system = PROMPT.format(cast=cast_text(cast)) + ("\n\n" + campaign if campaign else "")
 
     def work(segments) -> list[dict]:
         text = "\n".join(llm.line(s, t.offset) for s in segments)

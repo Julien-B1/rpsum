@@ -7,6 +7,7 @@ from pathlib import Path
 
 from . import audio as au
 from .config import RUNS
+from .vision import url_start
 
 
 def ingest(source: str, run_id: str | None = None, force: bool = False) -> Path:
@@ -33,7 +34,7 @@ def ingest(source: str, run_id: str | None = None, force: bool = False) -> Path:
                 raw = existing[0]
             else:
                 # Audio seul. « Audio_Only » est le nom du format audio chez Twitch.
-                opts = {"quiet": True, "no_warnings": True, "format": "bestaudio/Audio_Only/worst",
+                opts = {"quiet": True, "no_warnings": True, "noprogress": True, "format": "bestaudio/Audio_Only/worst",
                         "outtmpl": str(run / "source.%(ext)s"), "concurrent_fragment_downloads": 8}
                 with YoutubeDL(opts) as ydl:
                     done = ydl.extract_info(source, download=True)
@@ -45,6 +46,9 @@ def ingest(source: str, run_id: str | None = None, force: bool = False) -> Path:
         "channel": info.get("channel") or info.get("uploader"), "extractor": info.get("extractor"),
         "upload_date": info.get("upload_date"), "language": info.get("language"),
         "duration": au.duration(target),
+        "description": info.get("description") or "",
+        "source": source if not local.is_file() else str(local.resolve()),
+        "start": url_start(source),  # position de départ portée par l'URL (t=…)
         "chapters": [{"start": c["start_time"], "end": c["end_time"], "title": c["title"]}
                      for c in info.get("chapters") or []],
     }

@@ -30,7 +30,8 @@ def transcribe(run: Path, provider_name: str, model: str, opts: TranscribeOption
     out = run / "transcripts" / label
     out.mkdir(parents=True, exist_ok=True)
 
-    if force or not (out / "transcript.json").exists():
+    fresh = force or not (out / "transcript.json").exists()
+    if fresh:
         audio = source
         if partial:
             audio = out / "extract.opus"
@@ -52,7 +53,9 @@ def transcribe(run: Path, provider_name: str, model: str, opts: TranscribeOption
             "estimated_cost_usd": provider.stt_cost(model, transcript.duration),
         })
 
-    if not partial:
+    # Le transcript courant du run n'est remplacé que par une transcription neuve, ou s'il manque :
+    # relancer une transcription déjà faite ne doit pas effacer les annotations de `identify`.
+    if not partial and (fresh or not (run / "transcript.json").exists()):
         for name in ("transcript.json", "transcript.md"):
             shutil.copy(out / name, run / name)
     return out

@@ -19,6 +19,7 @@ class Cap(StrEnum):
     CHAT = "chat"
     JSON_SCHEMA = "json_schema"
     AUDIO_CHAT = "audio_chat"
+    VISION = "vision"
 
 
 @dataclass
