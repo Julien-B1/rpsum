@@ -1,0 +1,6 @@
+[client]
+# Masque le menu développeur et le bouton Deploy.
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false

@@ -145,7 +145,9 @@ facts = [source.get("channel"), timestamp(source["duration"]) if source.get("dur
 st.caption(" · ".join(str(f) for f in facts if f))
 
 
-@st.fragment(run_every=3)
+# Rafraîchissement automatique seulement pendant un traitement : sinon l'indicateur d'activité de Streamlit
+# (icône animée et bouton Stop, en haut à droite) tournerait en permanence.
+@st.fragment(run_every=3 if job_running(run_id) else None)
 def job_status() -> None:
     log, _ = job_paths(run_id)
     if not log.exists():
