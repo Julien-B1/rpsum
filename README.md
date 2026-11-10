@@ -21,4 +21,4 @@ uv run rpsum summarize ma-session --preset chronique
 uv run rpsum extract ma-session --clips
 ```
 
-Mode d'emploi complet : voir le wiki du dépôt. Plan, résultats d'essais et backlog : `PLAN.md`.
+Mode d'emploi complet : `docs/wiki/` (source du wiki du dépôt). Plan, résultats d'essais et backlog : `PLAN.md`.
