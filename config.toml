@@ -1,9 +1,12 @@
 # Fournisseur et modèle par tâche. Surchargeable en CLI : --provider / --model.
 # `rpsum models --task <tâche>` liste les modèles compatibles.
 
+# Transcription : une seule des deux paires doit être active. Pour changer, commenter l'une et décommenter l'autre.
 [tasks.transcribe]
-provider = "elevenlabs"
-model = "scribe_v2"
+provider = "mistral"
+model = "voxtral-small-transcribe-3"
+# provider = "elevenlabs"
+# model = "scribe_v2"
 
 [tasks.identify]
 provider = "mistral"
