@@ -50,6 +50,9 @@ de la vidéo, textes relevés à l'écran. Extrais-en tout ce qui aidera à bien
   façons de le dire ou de l'écrire, `description` une phrase utile (rôle, lien avec les autres). Chaîne vide si rien.
 
 Règles : ne retiens que ce qui figure dans les documents. N'invente aucun nom. Garde l'orthographe des documents.
+Une description ne contient que ce qu'un document dit explicitement de cette entrée précise. Si un document donne
+une information sans dire à qui elle s'applique (« deux nains, un oni et un chat »), ne la répartis pas entre les
+entrées : mets-la dans `setting` et laisse les descriptions vides.
 Un même nom ne figure que dans une seule liste. Sois exhaustif sur les noms propres : chacun compte."""
 
 GOOGLE = re.compile(r"https://docs\.google\.com/(document|spreadsheets|presentation)/d/([\w-]+)")
@@ -190,6 +193,29 @@ def vocabulary(context: dict, limit: int = 100) -> list[str]:
         names += [entry["name"] for entry in context.get(key, [])]
     cleaned = [n.strip() for n in names if n and 1 < len(n.strip()) <= 50]
     return list(dict.fromkeys(cleaned))[:limit]
+
+
+def fix_names(text: str, names: list[str], threshold: float = 0.85) -> tuple[str, int]:
+    """Ramène à l'orthographe officielle les mots très proches d'un nom connu (« Gontran » pour « Gontrand »).
+    Prudent : mot d'au moins 5 lettres, avec majuscule, proche d'un seul nom, même initiale."""
+    from difflib import SequenceMatcher
+    singles = [n for n in names if " " not in n and len(n) >= 5]
+    exact = {n.lower() for n in names}
+    count = 0
+
+    def repl(match: re.Match) -> str:
+        nonlocal count
+        word = match.group(0)
+        if word.lower() in exact:
+            return word
+        close = [n for n in singles if n[0].lower() == word[0].lower()
+                 and SequenceMatcher(None, word.lower(), n.lower()).ratio() >= threshold]
+        if len(close) != 1:
+            return word
+        count += 1
+        return close[0]
+
+    return re.sub(r"\b[A-ZÀ-Ý][\wÀ-ÿ'’-]{4,}\b", repl, text), count
 
 
 def hints(context: dict) -> dict:

@@ -357,3 +357,17 @@ Extrait testé : YouTube « Les larme de la sirène », 00:20:00 à 00:35:00. Fi
 - Reste vrai : un ton humoristique enjolive des détails hors guillemets, et les noms propres varient d'une scène à l'autre (« Arkexa », « Arc Hexa ») tant que le fichier de contexte n'existe pas.
 - Extraction : 51 passages retenus et 3 rejetés (YouTube), 28 retenus et 10 rejetés (Twitch). Un passage est rejeté quand sa citation est introuvable dans le transcript.
 - Limite de débit Mistral atteinte avec 16 appels simultanés : nouvel essai automatique ajouté.
+
+### Contexte, commande `run`, interface (2026-11-10, après-midi)
+
+Session d'essai : « JDR - Dimension Void : La secte de l'IA », 2 h 29, run `void`.
+
+- **Lecture de l'écran.** Trois images capturées à partir de `t=229s`. Le modèle de vision relève le MJ et les quatre couples pseudo / personnage. Premier essai : pseudo et personnage inversés. Corrigé en lui faisant déduire l'ordre de l'étiquette du MJ (« Maître du Jeu - Karu »). Résultat conforme à l'image.
+- **Fiche de contexte.** Construite depuis l'écran et la description de la vidéo. Premier essai : le modèle avait réparti « deux nains, un oni et un chat » entre les personnages, à tort. Corrigé : une description ne contient que ce qui est dit de l'entrée elle-même.
+- **Transcription Mistral** avec lexique de la fiche : 7 min 19 pour 2 h 29, 6 morceaux, 0,60 dollar estimé. 7 voix trouvées pour 5 personnes ; l'identification les rattache aux 5 participants de la fiche.
+- **Noms.** 35 mots ramenés à l'orthographe de la fiche (« Gontran » vers « Gontrand », « Grimgar » vers « Grimar »).
+- **Reprise vérifiée.** `rpsum run void` relancé : transcription et identification gardées, résumé et extraction refaits, 1 min 11. `--from identify` : 3 min 21, sans retranscrire.
+- **Fausse piste notée.** Le PNJ commanditaire s'appelle vraiment Karu, comme le MJ. Une règle qui interdisait le pseudo du MJ comme nom de PNJ a été ajoutée puis retirée.
+- **Interface Streamlit** (`app.py`) : testée sans navigateur sur un run vide et deux runs complets, et serveur réel démarré une fois. Non vérifiée à l'œil dans un navigateur.
+
+Non testé : liens Google Docs réels, PDF et images joints au contexte (seuls les fichiers texte locaux sont couverts par un test), fournisseurs locaux.

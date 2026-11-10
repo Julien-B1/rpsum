@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -66,7 +67,8 @@ Pour chaque réplique numérotée, donne :
   « regles » : jets de dés, points de vie, règles, fiches de personnage.
   « hors-jeu » : blagues, discussion entre joueurs, technique, pause, adresse au public.
 - character : le personnage qui s'exprime, seulement en mode « en-jeu ». Pour un joueur, son personnage.
-  Pour le MJ, le nom du PNJ qu'il fait parler (ou une courte description, par exemple « le vieux pêcheur »). Sinon null.
+  Pour le MJ, le nom du PNJ qu'il fait parler. Si le PNJ n'a pas de nom, une courte description
+  (« le vieux pêcheur », « la cheffe de guilde »). Sinon null.
 
 Les répliques marquées [contexte] servent à comprendre la scène : ne les annote pas.
 Réponds en JSON avec une entrée par réplique à annoter, en reprenant son numéro."""
@@ -194,9 +196,18 @@ def annotate_lines(t: Transcript, cast: dict, provider_name: str, model: str, wi
                 # soit la voix d'un joueur a été attribuée au MJ. On retire le nom et on signale le doute.
                 if seg.role == "mj" and seg.character in own.values():
                     seg.character, seg.confidence = None, 0.3
+                seg.character = clean_npc(seg.character)
                 done += 1
             progress(f"identify : fenêtre {index + 1} sur {len(starts)}")
     return done
+
+
+def clean_npc(character: str | None) -> str | None:
+    """Retire la mention « (PNJ) » que le modèle ajoute parfois au nom. Un PNJ peut porter le pseudo du MJ :
+    c'est arrivé (« une dénommée Karu », jouée par le MJ Karu), donc ce nom n'est pas filtré."""
+    if not character:
+        return None
+    return re.sub(r"\s*\(PNJ[^)]*\)\s*$", "", character, flags=re.IGNORECASE).strip() or None
 
 
 def to_script(t: Transcript, title: str) -> str:

@@ -8,9 +8,12 @@ from .schema import Segment, Transcript, timestamp
 
 
 def line(seg: Segment, offset: float = 0.0) -> str:
-    who = seg.player or seg.speaker
+    # Le MJ est étiqueté « MJ » et non par son pseudo : sinon le modèle le prend pour un personnage de la fiction.
+    who = "MJ" if seg.role == "mj" else (seg.player or seg.speaker)
     if seg.character and seg.character != who:
         who += f" / {seg.character}"
+    elif seg.role == "mj" and seg.mode == "en-jeu":
+        who += " / PNJ non nommé"
     mode = f" ({seg.mode})" if seg.mode else ""
     return f"{seg.id} [{timestamp(seg.start + offset)}] {who}{mode}: {seg.text}"
 

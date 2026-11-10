@@ -149,6 +149,14 @@ def step_identify(run: Path, cfg: dict, force: bool, say: Say, provider: str | N
         say("Identification : déjà faite, non refaite.")
         return json.loads(cast_path.read_text())
     chosen_provider, chosen_model = config.task_choice(cfg, "identify", provider, model)
+    context = ctx.load(run)
+    if context:  # orthographe officielle des noms connus, avant toute analyse
+        names, fixed = ctx.vocabulary(context, 10_000), 0
+        for seg in transcript.segments:
+            seg.text, n = ctx.fix_names(seg.text, names)
+            fixed += n
+        if fixed:
+            say(f"Identification : {fixed} nom(s) ramené(s) à l'orthographe de la fiche de contexte")
     if force or redo_cast or not cast_path.exists():
         cast = idf.propose_cast(run, transcript, chosen_provider, chosen_model)
         cast_path.write_text(json.dumps(cast, ensure_ascii=False, indent=2))

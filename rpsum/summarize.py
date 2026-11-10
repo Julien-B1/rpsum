@@ -40,6 +40,8 @@ Découpe ce passage en scènes (changement de lieu, d'objectif ou de situation) 
 - off_game : moments hors jeu notables (fou rire, blague récurrente, incident technique). Liste vide sinon.
 
 Règles : n'écris que ce qui figure dans le transcript. Les répliques « hors-jeu » ne font pas partie de la fiction.
+Dans summary, characters, npcs et decisions, n'emploie que des noms de personnages : jamais le pseudo d'un joueur
+ni celui du MJ. Une réplique « Joueur / Personnage » se rapporte au personnage.
 Le transcript est automatique : un nom mal orthographié se corrige d'après la distribution.
 Les scènes doivent couvrir tout le passage, dans l'ordre."""
 
@@ -56,6 +58,8 @@ Consignes de rédaction :
 - Périmètre : {scope}
 - Langue : français.
 {instructions}
+Les pseudos des joueurs et du MJ désignent des personnes réelles : ils n'apparaissent dans le résumé que si le
+périmètre inclut l'ambiance de la table.
 Règle absolue : chaque fait du résumé doit venir des fiches. N'invente ni événement, ni nom, ni dialogue.
 N'écris aucune réplique entre guillemets : les fiches ne contiennent pas les paroles exactes. Rapporte les paroles au style indirect.
 Le ton change la manière de raconter, jamais les faits. Rends directement le résumé, sans préambule."""
@@ -83,9 +87,16 @@ def cast_text(cast: dict) -> str:
         if entry["role"] == "autre":
             continue
         people.setdefault(entry["player"], {"role": entry["role"], "characters": []})["characters"] += entry["characters"]
-    return "\n".join(f"- {name} : {info['role']}"
-                     + (f", joue {', '.join(dict.fromkeys(info['characters']))}" if info["characters"] else "")
-                     for name, info in people.items()) or "(inconnue)"
+    lines = []
+    for name, info in people.items():
+        if info["role"] == "mj":
+            # Le pseudo du MJ n'est pas donné : le modèle s'en servirait pour nommer un PNJ sans nom.
+            lines.append("- MJ : maître du jeu. Personne réelle, absente de la fiction. Il fait parler les PNJ, "
+                         "indiqués après la barre oblique. Un « PNJ non nommé » se désigne par sa fonction.")
+        else:
+            played = ", ".join(dict.fromkeys(info["characters"])) or "personnage inconnu"
+            lines.append(f"- {name} : joueur, personne réelle. Son personnage dans la fiction : {played}.")
+    return "\n".join(lines) or "(inconnue)"
 
 
 def load_preset(name: str | None, overrides: dict) -> dict:
@@ -162,6 +173,7 @@ def write_summary(scenes: list[dict], cast: dict, title: str, settings: dict, pr
                  + ". Garde le ton, le format et les faits essentiels. N'ajoute aucun fait. Rends seulement le texte.")
         text = provider.chat(model, [*messages, {"role": "assistant", "content": text},
                                      {"role": "user", "content": order}], temperature=0.3).strip()
+    text = strip_fence(text)
     # Garde-fou : une réplique entre guillemets doit exister dans le transcript.
     invented = unverified_quotes(text, transcript) if transcript else []
     if invented:
@@ -171,7 +183,13 @@ def write_summary(scenes: list[dict], cast: dict, title: str, settings: dict, pr
                    "Ne change rien d'autre, n'ajoute aucun fait. Rends seulement le texte.")
         text = provider.chat(model, [*messages, {"role": "assistant", "content": text},
                                      {"role": "user", "content": order}], temperature=0.2).strip()
-    return text
+    return strip_fence(text)
+
+
+def strip_fence(text: str) -> str:
+    """Retire les balises de bloc de code dont certains modèles entourent leur réponse."""
+    match = re.fullmatch(r"\s*```[\w-]*\n(.*?)\n?```\s*", text, re.DOTALL)
+    return match.group(1).strip() if match else text.strip()
 
 
 QUOTE = re.compile(r'«\s*([^»]{6,}?)\s*»|“([^”]{6,}?)”|"([^"]{6,}?)"')

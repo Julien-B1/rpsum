@@ -131,3 +131,35 @@ def test_url_start_and_resume_rules():
     raw.segments[0].mode = "en-jeu"
     assert is_annotated(raw)
     assert "cast.json" in DOWNSTREAM["transcribe"] and "cast.json" not in DOWNSTREAM["identify"]
+
+
+def test_fix_names_is_conservative():
+    from rpsum.context import fix_names
+    names = ["Gontrand", "Grimar", "Jonda", "Karu", "Bronk", "La secte de l'IA"]
+    text, count = fix_names("Gontran et Grimgar suivent Jondat. Gontrand grimpe. Karl et Grimer attendent, grimar aussi.", names)
+    assert text == "Gontrand et Grimar suivent Jonda. Gontrand grimpe. Karl et Grimer attendent, grimar aussi."
+    assert count == 3
+
+
+def test_summary_fence_is_stripped_and_gm_is_not_a_character():
+    from rpsum.llm import line
+    from rpsum.schema import Segment
+    from rpsum.summarize import cast_text, strip_fence
+    assert strip_fence("```markdown\n# Titre\nTexte\n```") == "# Titre\nTexte"
+    assert strip_fence("Texte simple") == "Texte simple"
+    gm = Segment(id=3, start=0, end=1, speaker="s", text="Vous êtes qui ?", player="Karu", role="mj", character="le vieux", mode="en-jeu")
+    assert line(gm) == "3 [00:00:00] MJ / le vieux (en-jeu): Vous êtes qui ?"
+    cast = {"speakers": [{"speaker": "s", "player": "Karu", "role": "mj", "characters": []},
+                         {"speaker": "t", "player": "Kratos", "role": "joueur", "characters": ["Grimar"]}]}
+    assert "absente de la fiction" in cast_text(cast) and "Son personnage dans la fiction : Grimar" in cast_text(cast)
+    assert "Karu" not in cast_text(cast)
+    gm.character = None
+    assert line(gm) == "3 [00:00:00] MJ / PNJ non nommé (en-jeu): Vous êtes qui ?"
+
+
+def test_npc_name_cleanup_keeps_real_names():
+    from rpsum.identify import clean_npc
+    assert clean_npc("Karu (PNJ)") == "Karu"
+    assert clean_npc("la spécialiste des armes (PNJ)") == "la spécialiste des armes"
+    assert clean_npc("Sigmund") == "Sigmund"
+    assert clean_npc(None) is None and clean_npc("(PNJ)") is None

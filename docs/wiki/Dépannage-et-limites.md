@@ -26,6 +26,15 @@ Les lister dans un fichier et relancer `transcribe` avec `--vocab`.
 **Distribution fausse.**
 Corriger `cast.json` à la main, puis relancer `rpsum identify <id>`.
 
+**Pseudo et personnage inversés.**
+L'écran affiche « A - B » sans dire lequel est le pseudo. Vérifier `runs/<id>/overlay.json`. Si c'est faux, écrire la bonne distribution dans le fichier de contexte (« Kratos joue Grimar »), puis `rpsum context <id>`.
+
+**Lien Google Docs en échec.**
+Le document doit être partagé en « toute personne disposant du lien ». L'état de chaque source figure à la fin de `context.md`.
+
+**Transcription interrompue.**
+Relancer la même commande. Chez Mistral, les morceaux déjà transcrits sont repris du disque.
+
 ## Limites connues
 
 - **Parole superposée.** Quand plusieurs personnes parlent en même temps, la séparation des voix se trompe. Des répliques de joueurs se retrouvent attribuées au MJ.
@@ -33,4 +42,6 @@ Corriger `cast.json` à la main, puis relancer `rpsum identify <id>`.
 - **Noms propres dans les résumés.** Un même nom peut s'écrire de plusieurs façons d'une scène à l'autre tant qu'il n'est pas dans le lexique.
 - **Notes des passages.** L'extraction note généreusement : beaucoup de passages reçoivent 8 ou plus.
 - **Local.** Pas de transcription locale. Ollama et llama.cpp ne sont pas encore validés.
+- **Contexte.** Les liens Google Docs, les PDF et les images joints n'ont pas encore été essayés sur des documents réels.
+- **Interface.** Testée par automate, pas encore relue à l'œil dans un navigateur.
 - **Mesure.** La justesse de l'identification a été jugée à la lecture, pas mesurée contre une annotation de référence.
