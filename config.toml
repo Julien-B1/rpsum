@@ -1,0 +1,27 @@
+# Fournisseur et modèle par tâche. Surchargeable en CLI : --provider / --model.
+# `rpsum models --task <tâche>` liste les modèles compatibles.
+
+[tasks.transcribe]
+provider = "elevenlabs"
+model = "scribe_v2"
+
+[tasks.identify]
+provider = "mistral"
+model = "mistral-large-latest"
+
+[tasks.enrich]
+provider = "mistral"
+model = "mistral-medium-latest"
+
+[tasks.summarize]
+provider = "mistral"
+model = "mistral-large-latest"
+
+[tasks.extract]
+provider = "mistral"
+model = "mistral-large-latest"
+
+[transcribe]
+language = "fr"
+# Mistral : taille cible des morceaux, en secondes (fenêtre de 65 536 tokens).
+mistral_chunk_seconds = 1500

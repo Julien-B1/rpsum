@@ -1,0 +1,6 @@
+# Journal intime d'un personnage. Choisir le personnage avec --pov.
+tone = "intime et subjectif"
+length = "moyen"
+format = "recit"
+pov = "un des personnages joueurs, à la première personne (il ne raconte que ce qu'il a pu voir ou apprendre)"
+scope = "en-jeu"

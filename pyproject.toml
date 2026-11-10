@@ -1,0 +1,21 @@
+[project]
+name = "rpsum"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.28.1",
+    "pydantic>=2.14.3",
+    "python-dotenv>=1.2.4",
+    "typer>=0.29.0",
+    "yt-dlp[default]>=2026.10.26",
+]
+
+[project.scripts]
+rpsum = "rpsum.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["pytest>=8"]
