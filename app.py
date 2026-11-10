@@ -10,10 +10,11 @@ import sys
 import time
 from pathlib import Path
 
+import httpx
 import pandas as pd
 import streamlit as st
 
-from rpsum import config
+from rpsum import config, usage
 from rpsum.extract import CATEGORIES
 from rpsum.schema import timestamp
 from rpsum.summarize import FORMATS, LENGTHS, SCOPES
@@ -101,6 +102,66 @@ def model_picker(task: str, key: str) -> list[str]:
     return ["--provider", provider, "--model", model]
 
 
+@st.cache_data(ttl=300, show_spinner="Lecture ElevenLabs…")
+def elevenlabs_cached() -> dict:
+    try:
+        return usage.elevenlabs_status()
+    except httpx.HTTPError as exc:
+        return {"error": str(exc)}
+
+
+def usage_panel() -> None:
+    """Consommation : journal local des appels (Mistral n'a pas d'API de quota) et état ElevenLabs."""
+    rows = usage.read_ledger()
+    month = time.strftime("%Y-%m")
+    by_provider = usage.totals(rows, since=month)
+    st.markdown(f"**Ce mois-ci ({month}), d'après le journal local**")
+    if not by_provider:
+        st.caption("Aucun appel noté. Le journal (runs/usage.jsonl) commence au 2026-11-10.")
+    for name, t in sorted(by_provider.items()):
+        parts = [f"{t['calls']} appel{'s' if t['calls'] > 1 else ''}"]
+        if t["prompt_tokens"] or t["completion_tokens"]:
+            parts.append(f"{t['prompt_tokens']:,} jetons envoyés, {t['completion_tokens']:,} reçus".replace(",", " "))
+        if t["audio_seconds"]:
+            parts.append(f"{t['audio_seconds'] / 3600:.1f} h d'audio")
+        cost = f" ≈ {t['cost_usd']:.3f} $" if t["cost_usd"] else ""
+        st.markdown(f"- {name} : {', '.join(parts)}{cost}")
+
+    st.markdown("**Mistral**")
+    last = next((r.get("limits") for r in reversed(rows) if r.get("provider") == "mistral" and r.get("limits")), None)
+    if st.button("Lire les limites de débit", key="mistral-limits", help="Appel de 1 jeton, coût négligeable."):
+        last = usage.mistral_limits()
+    if last:
+        labels = {"limit-tokens-minute": "jetons / min", "remaining-tokens-minute": "jetons restants / min",
+                  "limit-req-minute": "requêtes / min", "remaining-req-minute": "requêtes restantes / min",
+                  "limit-tokens-month": "jetons / mois", "remaining-tokens-month": "jetons restants / mois"}
+        st.caption(" · ".join(f"{labels.get(k, k)} : {v}" for k, v in last.items() if k in labels) or str(last))
+    st.caption(f"Pas d'API de quota ni de solde chez Mistral. Montants réels : [console]({usage.MISTRAL_CONSOLE}).")
+
+    st.markdown("**ElevenLabs (30 derniers jours)**")
+    if st.button("Actualiser", key="el-refresh"):
+        elevenlabs_cached.clear()
+    status = elevenlabs_cached()
+    if status.get("error"):
+        st.warning(status["error"])
+        return
+    sub = status.get("subscription")
+    if sub and sub.get("limit"):
+        reset = time.strftime("%Y-%m-%d", time.localtime(sub["reset"])) if sub.get("reset") else "?"
+        st.progress(min(sub["used"] / sub["limit"], 1.0),
+                    text=f"{sub['used']:,} / {sub['limit']:,} crédits ({sub.get('tier')}), remise à zéro le {reset}")
+    elif status.get("subscription_error"):
+        st.caption("Limite de l'abonnement illisible : la clé n'a pas la permission `user_read`. "
+                   f"Ajoute-la sur [ElevenLabs]({usage.ELEVENLABS_CONSOLE}) pour voir le solde ici.")
+    products = status.get("by_product", {})
+    if products:
+        st.markdown("\n".join(f"- {name} : {sum(values):,.0f} crédits" for name, values in products.items()))
+    elif "stats_error" in status:
+        st.caption(status["stats_error"])
+    else:
+        st.caption("Aucune consommation.")
+
+
 # ---------------------------------------------------------------- barre latérale
 
 with st.sidebar:
@@ -128,6 +189,9 @@ with st.sidebar:
                 launch(run_id, args)
                 st.session_state["watch"] = run_id
                 st.rerun()
+
+    with st.expander("Consommation API"):
+        usage_panel()
 
 if not chosen and not st.session_state.get("watch"):
     st.info("Aucune session. Lance-en une depuis la barre latérale.")

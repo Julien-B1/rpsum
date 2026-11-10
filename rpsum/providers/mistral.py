@@ -9,7 +9,7 @@ from pathlib import Path
 
 import httpx
 
-from .. import audio as au
+from .. import audio as au, usage
 from ..schema import Segment, Transcript
 from .base import Cap, ModelInfo, Provider, TranscribeOptions, form, openai_chat
 
@@ -84,7 +84,7 @@ class Mistral(Provider):
         return sorted(models, key=lambda m: m.id)
 
     def chat(self, model, messages, json_schema=None, temperature=0.2) -> str:
-        return openai_chat(API, self._key(), model, messages, json_schema, temperature)
+        return openai_chat(API, self._key(), model, messages, json_schema, temperature, provider="mistral")
 
     def _request(self, audio: Path, model: str, opts: TranscribeOptions, references: dict[str, str]) -> dict:
         data: list[tuple[str, str]] = [("model", model), ("diarize", "true"), ("timestamp_granularities", "segment")]
@@ -98,7 +98,11 @@ class Mistral(Provider):
                               data=form(data), files={"file": (audio.name, fh)}, timeout=1800.0)
         if resp.status_code >= 400:
             raise RuntimeError(f"Mistral : HTTP {resp.status_code} {resp.text[:500]}")
-        return resp.json()
+        raw = resp.json()
+        seconds = (raw.get("usage") or {}).get("prompt_audio_seconds") or au.duration(audio)
+        usage.record("mistral", model, "transcription", audio_seconds=seconds,
+                     cost_usd=self.stt_cost(model, seconds), limits=usage.rate_limits(resp.headers))
+        return raw
 
     def transcribe(self, audio: Path, model: str, opts: TranscribeOptions) -> tuple[Transcript, list[dict]]:
         total = au.duration(audio)

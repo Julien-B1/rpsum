@@ -25,7 +25,8 @@ class _Local(Provider):
             return False, f"{self.base_url} injoignable ({type(exc).__name__})"
 
     def chat(self, model, messages, json_schema=None, temperature=0.2) -> str:
-        return openai_chat(self.base_url, None, model, messages, json_schema, temperature, timeout=3600.0)
+        return openai_chat(self.base_url, None, model, messages, json_schema, temperature, timeout=3600.0,
+                           provider=self.name)
 
 
 class Ollama(_Local):

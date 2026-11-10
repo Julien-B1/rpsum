@@ -44,6 +44,15 @@ Les listes de modèles sont lues en direct auprès de Mistral, d'Ollama et de ll
 | Ollama | `ollama` | non | oui | pas encore testé sur un serveur réel |
 | llama.cpp | `llamacpp` | non | oui | pas encore testé sur un serveur réel |
 
+## Suivre sa consommation
+
+Chaque appel payant est noté dans `runs/usage.jsonl` : fournisseur, modèle, jetons envoyés et reçus, secondes d'audio, coût indicatif. L'encart **Consommation API** de l'interface en fait les totaux du mois.
+
+- **Mistral** n'a pas d'API de quota ni de solde. Le journal local est la seule source dans l'outil. Les limites de débit (jetons et requêtes par minute) sont lues sur les en-têtes des réponses. Les montants réels sont sur la [console Mistral](https://admin.mistral.ai/organization/usage).
+- **ElevenLabs** donne les crédits consommés par produit (STT, TTS…) sur 30 jours. La limite de l'abonnement et sa date de remise à zéro ne s'affichent que si la clé a la permission `user_read`.
+
+Les prix du texte Mistral sont dans `rpsum/usage.py` (`CHAT_PRICES`), ceux de la transcription dans chaque fournisseur (`stt_price_per_min`). Ce sont des prix indicatifs, à vérifier sur les pages tarifaires.
+
 ## Transcription : ElevenLabs ou Mistral
 
 Sur les deux premières sessions d'essai, ElevenLabs a mieux séparé les voix et il est le seul à signaler les rires, utiles pour le bêtisier. Mistral est le choix par défaut pendant le développement. Les coûts sont voisins : environ 0,65 dollar pour une session de 2 h 50.

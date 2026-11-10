@@ -8,6 +8,7 @@ from pathlib import Path
 
 import httpx
 
+from .. import usage
 from ..schema import Transcript
 
 
@@ -67,7 +68,8 @@ class Provider:
 
 
 def openai_chat(base_url: str, api_key: str | None, model: str, messages: list[dict],
-                json_schema: dict | None, temperature: float, timeout: float = 600.0) -> str:
+                json_schema: dict | None, temperature: float, timeout: float = 600.0,
+                provider: str = "local") -> str:
     """Chat au format OpenAI, commun à Mistral, Ollama et llama.cpp."""
     body: dict = {"model": model, "messages": messages, "temperature": temperature}
     if json_schema is not None:
@@ -84,7 +86,13 @@ def openai_chat(base_url: str, api_key: str | None, model: str, messages: list[d
         time.sleep(2 ** (attempt + 1))
     if resp.status_code >= 400:
         raise RuntimeError(f"Chat {model} : HTTP {resp.status_code} {resp.text[:500]}")
-    return resp.json()["choices"][0]["message"]["content"]
+    data = resp.json()
+    tokens = data.get("usage") or {}
+    prompt, completion = tokens.get("prompt_tokens", 0), tokens.get("completion_tokens", 0)
+    usage.record(provider, model, "chat", prompt_tokens=prompt, completion_tokens=completion,
+                 cost_usd=usage.chat_cost(model, prompt, completion) if provider == "mistral" else None,
+                 limits=usage.rate_limits(resp.headers))
+    return data["choices"][0]["message"]["content"]
 
 
 def form(pairs: list[tuple[str, str]]) -> dict[str, str | list[str]]:

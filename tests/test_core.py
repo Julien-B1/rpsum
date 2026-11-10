@@ -165,3 +165,18 @@ def test_npc_name_cleanup_keeps_real_names():
     assert clean_npc("la spécialiste des armes (PNJ)") == "la spécialiste des armes"
     assert clean_npc("Sigmund") == "Sigmund"
     assert clean_npc(None) is None and clean_npc("(PNJ)") is None
+
+
+def test_usage_totals_and_cost(tmp_path):
+    from rpsum import usage
+    assert usage.chat_cost("mistral-large-latest", 1_000_000, 0) == 0.5
+    assert usage.chat_cost("inconnu", 10, 10) is None
+    ledger = tmp_path / "usage.jsonl"
+    ledger.write_text(
+        '{"at": "2026-10-31T23:00:00", "provider": "mistral", "model": "m", "kind": "chat", "prompt_tokens": 5}\n'
+        '{"at": "2026-11-02T10:00:00", "provider": "mistral", "model": "m", "kind": "chat", "prompt_tokens": 7, "cost_usd": 0.01}\n'
+        'ligne abîmée\n'
+        '{"at": "2026-11-03T10:00:00", "provider": "elevenlabs", "model": "s", "kind": "transcription", "audio_seconds": 60}\n')
+    totals = usage.totals(usage.read_ledger(ledger), since="2026-11")
+    assert totals["mistral"]["calls"] == 1 and totals["mistral"]["prompt_tokens"] == 7
+    assert totals["elevenlabs"]["audio_seconds"] == 60

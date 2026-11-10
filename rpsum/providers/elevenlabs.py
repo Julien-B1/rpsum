@@ -5,6 +5,7 @@ from pathlib import Path
 
 import httpx
 
+from .. import audio as au, usage
 from ..schema import Segment, Transcript
 from .base import Cap, ModelInfo, Provider, TranscribeOptions, form
 
@@ -71,4 +72,6 @@ class ElevenLabs(Provider):
         if resp.status_code >= 400:
             raise RuntimeError(f"ElevenLabs : HTTP {resp.status_code} {resp.text[:500]}")
         raw = resp.json()
+        seconds = au.duration(audio)
+        usage.record("elevenlabs", model, "transcription", audio_seconds=seconds, cost_usd=self.stt_cost(model, seconds))
         return normalize(raw, model), [raw]

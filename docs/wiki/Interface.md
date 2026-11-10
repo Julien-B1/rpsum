@@ -12,6 +12,7 @@ Elle s'ouvre sur `http://localhost:8501`.
 
 - **Session** : choisir un run existant.
 - **Nouvelle session** : URL ou fichier, identifiant, contexte de campagne collé dans la zone de texte, résumés à produire. Le bouton lance le pipeline complet.
+- **Consommation API** : ce que rpsum a consommé ce mois-ci, et l'état des comptes. Détail dans [[Fournisseurs et modèles|Fournisseurs-et-modèles#suivre-sa-consommation]].
 
 Un traitement en cours s'affiche en haut de page, avec son journal. La page se met à jour seule.
 
